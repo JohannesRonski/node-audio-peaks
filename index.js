@@ -57,8 +57,7 @@ function audioPeaksFromFile(audiofile, samples) {
         switchMap(filepath => {
             return from(fs.promises.readFile(filepath))
         }),
-        map(filedata => new Blob.Blob([filedata.buffer])),
-        switchMap(blob => from(blob.arrayBuffer())),
+        map(filedata => new Blob.from(filedata.buffer)),
         switchMap(arrayBuffer => from(decode(arrayBuffer))),
         map(audioBuffer => filterData(audioBuffer, samples ?? 70, false)),
         map(filteredData => normalizeData(filteredData, false)),
