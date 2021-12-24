@@ -1,8 +1,8 @@
-import { promises } from "fs";
-import fetch from 'node-fetch';
-import { of, map, from, switchMap } from 'rxjs';
-import decode from 'audio-decode';
-import { Blob as _Blob } from 'buffer';
+const fs = require("fs");
+const fetch = require('node-fetch');
+const { of, map, from, switchMap } = require('rxjs');
+const decode = require('audio-decode');
+const Blob = require('buffer');
 
 /**
  * Filters the AudioBuffer
@@ -13,8 +13,7 @@ import { Blob as _Blob } from 'buffer';
  */
 const filterData = (audioBuffer, samples, allchannels) => {
     const channels = allchannels ? audioBuffer.numberOfChannels : 1;
-    let filteredDataChannels = [];
-    let currentchannel = 0;
+    filteredDataChannels = [];
     for (currentchannel = 0; currentchannel < channels; currentchannel++) {
         const rawData = audioBuffer.getChannelData(currentchannel); // We only need to work with one channel of data
         const blockSize = Math.floor(rawData.length / samples); // the number of samples in each subdivision
@@ -41,7 +40,7 @@ const normalizeData = filteredDataChannels => {
     let multipliers = [];
     let normalized = [];
     filteredDataChannels.map((c, i) => {
-        let multiplier = Math.pow(Math.max(...c), -1);
+        multiplier = Math.pow(Math.max(...c), -1);
         normalized[i] = c.map(n => n * multiplier);
     });
     return normalized;
@@ -56,11 +55,11 @@ const normalizeData = filteredDataChannels => {
 function audioPeaksFromFile(audiofile, samples) {
     return of(audiofile).pipe(
         switchMap(filepath => {
-            return from(promises.readFile(filepath))
+            return from(fs.promises.readFile(filepath))
         }),
         map(filedata => Buffer.from(filedata.buffer)),
         switchMap(arrayBuffer => from(decode(arrayBuffer))),
-        map(audioBuffer => filterData(audioBuffer, samples ? samples : 70, false)),
+        map(audioBuffer => filterData(audioBuffer, samples ?? 70, false)),
         map(filteredData => normalizeData(filteredData, false)),
         map(normalizedData => normalizedData[0])
     );
@@ -79,7 +78,7 @@ function audioPeaksFromURL(audiofileurl, samples) {
         }),
         switchMap(file => from(file.arrayBuffer())),
         switchMap(arrayBuffer => from(decode(arrayBuffer))),
-        map(audioBuffer => filterData(audioBuffer, samples ? samples : 70, false)),
+        map(audioBuffer => filterData(audioBuffer, samples ?? 70, false)),
         map(filteredData => normalizeData(filteredData, false)),
         map(normalizedData => normalizedData[0])
     );
@@ -91,7 +90,7 @@ function audioPeaksFromURL(audiofileurl, samples) {
  * @param {samples} samples The number of "peaks" to return
  * @returns {Array} a normalized array of peaks from the first channel of audio
  */
-export function getAudioPeaks(audio, samples) {
+exports.getAudioPeaks = (audio, samples) => {
     if (audio.substr(0,4)=='http') {
         return audioPeaksFromURL(audio, samples);
     } else {
